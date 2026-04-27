@@ -153,6 +153,37 @@ CONFIG_MAP['cat-drums_2bar_small'] = Config(
     eval_examples_path=None,
 )
 
+CONFIG_MAP['cat-drums_2bar_db_small'] = Config(
+    model=MusicVAE(lstm_models.BidirectionalLstmEncoder(),
+                   lstm_models.CategoricalLstmDecoder()),
+    hparams=merge_hparams(
+        lstm_models.get_default_hparams(),
+        HParams(
+            batch_size=512,
+            max_seq_len=32,  # 2 bars w/ 16 steps per bar
+            z_size=128,
+            enc_rnn_size=[512],
+            dec_rnn_size=[256, 256],
+            free_bits=12,
+            max_beta=0.6,
+            sampling_schedule='inverse_sigmoid',
+            sampling_rate=1000,
+        )),
+    note_sequence_augmenter=None,
+    data_converter=data.DrumsConverter(
+        pitch_classes=[
+        # kick drum
+        [36, 35],
+        # snare drum
+        [38, 27, 28, 31, 32, 33, 34, 37, 39, 40, 56, 65, 66, 75, 85]],
+        max_bars=100,  # Truncate long drum sequences before slicing.
+        slice_bars=2,
+        steps_per_quarter=4,
+        roll_input=True),
+    train_examples_path=None,
+    eval_examples_path=None,
+)
+
 CONFIG_MAP['cat-drums_2bar_big'] = Config(
     model=MusicVAE(lstm_models.BidirectionalLstmEncoder(),
                    lstm_models.CategoricalLstmDecoder()),
