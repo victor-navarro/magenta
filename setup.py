@@ -92,6 +92,7 @@ CONSOLE_SCRIPTS = [
     'magenta.models.melody_rnn.melody_rnn_train',
     'magenta.models.music_vae.music_vae_generate',
     'magenta.models.music_vae.music_vae_train',
+    'magenta.models.music_vae.music_vae_train_distributed',
     'magenta.models.nsynth.wavenet.nsynth_generate',
     'magenta.models.nsynth.wavenet.nsynth_save_embeddings',
     'magenta.models.onsets_frames_transcription.onsets_frames_transcription_create_dataset',
