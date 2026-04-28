@@ -73,6 +73,7 @@ CONFIG_MAP['cat-mel_2bar_small'] = Config(
         steps_per_quarter=4),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['cat-mel_2bar_big'] = Config(
@@ -101,6 +102,7 @@ CONFIG_MAP['cat-mel_2bar_big'] = Config(
         steps_per_quarter=4),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # Chord-Conditioned Melody
@@ -124,6 +126,7 @@ CONFIG_MAP['cat-mel_2bar_med_chords'] = Config(
         chord_encoding=note_seq.TriadChordOneHotEncoding()),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # Drums
@@ -151,6 +154,7 @@ CONFIG_MAP['cat-drums_2bar_small'] = Config(
         roll_input=True),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['cat-drums_2bar_db_small'] = Config(
@@ -161,7 +165,7 @@ CONFIG_MAP['cat-drums_2bar_db_small'] = Config(
         HParams(
             batch_size=512,
             max_seq_len=32,  # 2 bars w/ 16 steps per bar
-            z_size=128,
+            z_size=256,
             enc_rnn_size=[512],
             dec_rnn_size=[256, 256],
             free_bits=12,
@@ -182,6 +186,71 @@ CONFIG_MAP['cat-drums_2bar_db_small'] = Config(
         roll_input=True),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
+)
+
+CONFIG_MAP['cat-drums_2bar_db_big'] = Config(
+    model=MusicVAE(lstm_models.BidirectionalLstmEncoder(),
+                   lstm_models.CategoricalLstmDecoder()),
+    hparams=merge_hparams(
+        lstm_models.get_default_hparams(),
+        HParams(
+            batch_size=512,
+            max_seq_len=32,  # 2 bars w/ 16 steps per bar
+            z_size=512,
+            enc_rnn_size=[2048],
+            dec_rnn_size=[2048, 2048, 2048],
+            free_bits=48,
+            max_beta=0.2,
+            sampling_schedule='inverse_sigmoid',
+            sampling_rate=1000,
+        )),
+    note_sequence_augmenter=None,
+    data_converter=data.DrumsConverter(
+        pitch_classes=[
+        # kick drum
+        [36, 35],
+        # snare drum
+        [38, 27, 28, 31, 32, 33, 34, 37, 39, 40, 56, 65, 66, 75, 85]],
+        max_bars=100,  # Truncate long drum sequences before slicing.
+        slice_bars=2,
+        steps_per_quarter=4,
+        roll_input=True),
+    train_examples_path=None,
+    eval_examples_path=None,
+    tfds_name=None,
+)
+
+CONFIG_MAP['cat-drums_2bar_db_small_8'] = Config(
+    model=MusicVAE(lstm_models.BidirectionalLstmEncoder(),
+                   lstm_models.CategoricalLstmDecoder()),
+    hparams=merge_hparams(
+        lstm_models.get_default_hparams(),
+        HParams(
+            batch_size=512,
+            max_seq_len=16,  # 2 bars w/ 8 steps per bar
+            z_size=128,
+            enc_rnn_size=[512],
+            dec_rnn_size=[256, 256],
+            free_bits=12,
+            max_beta=0.6,
+            sampling_schedule='inverse_sigmoid',
+            sampling_rate=1000,
+        )),
+    note_sequence_augmenter=None,
+    data_converter=data.DrumsConverter(
+        pitch_classes=[
+        # kick drum
+        [36, 35],
+        # snare drum
+        [38, 27, 28, 31, 32, 33, 34, 37, 39, 40, 56, 65, 66, 75, 85]],
+        max_bars=100,  # Truncate long drum sequences before slicing.
+        slice_bars=2,
+        steps_per_quarter=2,
+        roll_input=True),
+    train_examples_path=None,
+    eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['cat-drums_2bar_big'] = Config(
@@ -208,6 +277,7 @@ CONFIG_MAP['cat-drums_2bar_big'] = Config(
         roll_input=True),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['nade-drums_2bar_reduced'] = Config(
@@ -236,6 +306,7 @@ CONFIG_MAP['nade-drums_2bar_reduced'] = Config(
         roll_output=True),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['nade-drums_2bar_full'] = Config(
@@ -265,6 +336,7 @@ CONFIG_MAP['nade-drums_2bar_full'] = Config(
         roll_output=True),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # Trio Models
@@ -295,6 +367,7 @@ CONFIG_MAP['flat-trio_16bar'] = Config(
     data_converter=trio_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hierdec-trio_16bar'] = Config(
@@ -328,6 +401,7 @@ CONFIG_MAP['hierdec-trio_16bar'] = Config(
     data_converter=trio_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hier-trio_16bar'] = Config(
@@ -362,6 +436,7 @@ CONFIG_MAP['hier-trio_16bar'] = Config(
     data_converter=trio_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # 16-bar Melody Models
@@ -390,6 +465,7 @@ CONFIG_MAP['flat-mel_16bar'] = Config(
     data_converter=mel_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hierdec-mel_16bar'] = Config(
@@ -414,6 +490,7 @@ CONFIG_MAP['hierdec-mel_16bar'] = Config(
     data_converter=mel_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hier-mel_16bar'] = Config(
@@ -439,6 +516,7 @@ CONFIG_MAP['hier-mel_16bar'] = Config(
     data_converter=mel_16bar_converter,
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # Multitrack
@@ -481,6 +559,7 @@ CONFIG_MAP['hier-multiperf_vel_1bar_med'] = Config(
     ),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hier-multiperf_vel_1bar_big'] = Config(
@@ -496,6 +575,7 @@ CONFIG_MAP['hier-multiperf_vel_1bar_big'] = Config(
     ),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 CONFIG_MAP['hier-multiperf_vel_1bar_med_chords'] = Config(
@@ -511,6 +591,8 @@ CONFIG_MAP['hier-multiperf_vel_1bar_med_chords'] = Config(
     ),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
+
 )
 
 CONFIG_MAP['hier-multiperf_vel_1bar_big_chords'] = Config(
@@ -526,6 +608,7 @@ CONFIG_MAP['hier-multiperf_vel_1bar_big_chords'] = Config(
     ),
     train_examples_path=None,
     eval_examples_path=None,
+    tfds_name=None,
 )
 
 # GrooVAE configs
@@ -550,6 +633,8 @@ CONFIG_MAP['groovae_4bar'] = Config(
         max_tensors_per_notesequence=20,
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/4bar-midionly',
 )
 
@@ -574,6 +659,8 @@ CONFIG_MAP['groovae_2bar_humanize'] = Config(
         max_tensors_per_notesequence=20, humanize=True,
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/2bar-midionly'
 )
 
@@ -598,6 +685,8 @@ CONFIG_MAP['groovae_2bar_tap_fixed_velocity'] = Config(
         max_tensors_per_notesequence=20, tapify=True, fixed_velocities=True,
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/2bar-midionly'
 )
 
@@ -623,6 +712,8 @@ CONFIG_MAP['groovae_2bar_tap_fixed_velocity_note_dropout'] = Config(
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES,
         max_note_dropout_probability=0.8),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/2bar-midionly'
 )
 
@@ -647,6 +738,8 @@ CONFIG_MAP['groovae_2bar_add_closed_hh'] = Config(
         max_tensors_per_notesequence=20, add_instruments=[2],
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/2bar-midionly'
 )
 
@@ -671,5 +764,7 @@ CONFIG_MAP['groovae_2bar_hits_control_tfds'] = Config(
         max_tensors_per_notesequence=20, hits_as_controls=True,
         pitch_classes=data.ROLAND_DRUM_PITCH_CLASSES,
         inference_pitch_classes=data.REDUCED_DRUM_PITCH_CLASSES),
+    train_examples_path=None,
+    eval_examples_path=None,
     tfds_name='groove/2bar-midionly'
 )
