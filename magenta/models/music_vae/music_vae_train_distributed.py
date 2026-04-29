@@ -152,114 +152,15 @@ def _split_hosts(hosts):
 
 
 def _maybe_start_distributed_runtime():
-<<<<<<< HEAD
     """Starts tf.train.Server in distributed mode and returns runtime overrides."""
     worker_hosts = _split_hosts(FLAGS.worker_hosts)
     ps_hosts = _split_hosts(FLAGS.ps_hosts)
-=======
-  """Starts tf.train.Server in distributed mode and returns runtime overrides."""
-  worker_hosts = _split_hosts(FLAGS.worker_hosts)
-  ps_hosts = _split_hosts(FLAGS.ps_hosts)
-  task_index = FLAGS.task_index
->>>>>>> 2471775030c9b98b42c1d26971c684254e89ee3c
+    task_index = FLAGS.task_index
 
     if not worker_hosts and not ps_hosts:
         return None
 
-<<<<<<< HEAD
     if not worker_hosts or not ps_hosts:
-=======
-  if not worker_hosts or not ps_hosts:
-    raise ValueError(
-        'Both --worker_hosts and --ps_hosts are required for distributed mode.')
-
-  if FLAGS.job_name not in ['worker', 'ps']:
-    raise ValueError(
-        'Distributed mode requires --job_name to be `worker` or `ps`.')
-
-  if task_index < 0:
-    raise ValueError('--task_index must be >= 0.')
-
-  # In a single `srun -n2` worker step, task indices can come from Slurm.
-  # This avoids shell wrappers just to pass --task_index per worker.
-  slurm_procid = os.environ.get('SLURM_PROCID')
-  if (FLAGS.job_name == 'worker' and len(worker_hosts) > 1 and slurm_procid and
-      FLAGS.task_index == 0):
-    task_index = int(slurm_procid)
-
-  if FLAGS.job_name == 'worker' and task_index >= len(worker_hosts):
-    raise ValueError('--task_index is out of range for --worker_hosts.')
-
-  if FLAGS.job_name == 'ps' and task_index >= len(ps_hosts):
-    raise ValueError('--task_index is out of range for --ps_hosts.')
-
-  cluster = tf.train.ClusterSpec({'worker': worker_hosts, 'ps': ps_hosts})
-  server = tf.train.Server(
-      cluster, job_name=FLAGS.job_name, task_index=task_index)
-
-  if FLAGS.job_name == 'ps':
-    tf.logging.info('Parameter server %d waiting for requests.', task_index)
-    server.join()
-    return 'joined'
-
-  return {
-      'master': server.target,
-      'task': task_index,
-      'num_ps_tasks': len(ps_hosts),
-      'num_sync_workers': FLAGS.num_sync_workers or len(worker_hosts),
-  }
-
-
-def train(train_dir,
-          config,
-          dataset_fn,
-          checkpoints_to_keep=5,
-          keep_checkpoint_every_n_hours=1,
-          num_steps=None,
-          master='',
-          num_sync_workers=0,
-          num_ps_tasks=0,
-          task=0):
-  """Train loop."""
-  tf.gfile.MakeDirs(train_dir)
-  is_chief = (task == 0)
-  if is_chief:
-    _trial_summary(
-        config.hparams, config.train_examples_path or config.tfds_name,
-        train_dir)
-  with tf.Graph().as_default():
-    with tf.device(tf.train.replica_device_setter(
-        num_ps_tasks, merge_devices=True)):
-
-      model = config.model
-      model.build(config.hparams,
-                  config.data_converter.output_depth,
-                  is_training=True)
-
-      optimizer = model.train(**_get_input_tensors(dataset_fn(), config))
-
-      hooks = []
-      if num_sync_workers:
-        optimizer = tf.train.SyncReplicasOptimizer(
-            optimizer,
-            num_sync_workers)
-        hooks.append(optimizer.make_session_run_hook(is_chief))
-
-      grads, var_list = list(zip(*optimizer.compute_gradients(model.loss)))
-      global_norm = tf.global_norm(grads)
-      tf.summary.scalar('global_norm', global_norm)
-
-      if config.hparams.clip_mode == 'value':
-        g = config.hparams.grad_clip
-        clipped_grads = [tf.clip_by_value(grad, -g, g) for grad in grads]
-      elif config.hparams.clip_mode == 'global_norm':
-        clipped_grads = tf.cond(
-            global_norm < config.hparams.grad_norm_clip_to_zero,
-            lambda: tf.clip_by_global_norm(  # pylint:disable=g-long-lambda
-                grads, config.hparams.grad_clip, use_norm=global_norm)[0],
-            lambda: [tf.zeros(tf.shape(g)) for g in grads])
-      else:
->>>>>>> 2471775030c9b98b42c1d26971c684254e89ee3c
         raise ValueError(
             "Both --worker_hosts and --ps_hosts are required for distributed mode."
         )
@@ -267,28 +168,40 @@ def train(train_dir,
     if FLAGS.job_name not in ["worker", "ps"]:
         raise ValueError("Distributed mode requires --job_name to be `worker` or `ps`.")
 
-    if FLAGS.task_index < 0:
+    if task_index < 0:
         raise ValueError("--task_index must be >= 0.")
 
-    if FLAGS.job_name == "worker" and FLAGS.task_index >= len(worker_hosts):
+    # Support launching workers with a single `srun -n2` step without shell
+    # wrappers by deriving worker task index from Slurm rank when the default
+    # task index is used.
+    slurm_procid = os.environ.get("SLURM_PROCID")
+    if (
+        FLAGS.job_name == "worker"
+        and len(worker_hosts) > 1
+        and slurm_procid
+        and FLAGS.task_index == 0
+    ):
+        task_index = int(slurm_procid)
+
+    if FLAGS.job_name == "worker" and task_index >= len(worker_hosts):
         raise ValueError("--task_index is out of range for --worker_hosts.")
 
-    if FLAGS.job_name == "ps" and FLAGS.task_index >= len(ps_hosts):
+    if FLAGS.job_name == "ps" and task_index >= len(ps_hosts):
         raise ValueError("--task_index is out of range for --ps_hosts.")
 
     cluster = tf.train.ClusterSpec({"worker": worker_hosts, "ps": ps_hosts})
     server = tf.train.Server(
-        cluster, job_name=FLAGS.job_name, task_index=FLAGS.task_index
+        cluster, job_name=FLAGS.job_name, task_index=task_index
     )
 
     if FLAGS.job_name == "ps":
-        tf.logging.info("Parameter server %d waiting for requests.", FLAGS.task_index)
+        tf.logging.info("Parameter server %d waiting for requests.", task_index)
         server.join()
         return "joined"
 
     return {
         "master": server.target,
-        "task": FLAGS.task_index,
+        "task": task_index,
         "num_ps_tasks": len(ps_hosts),
         "num_sync_workers": FLAGS.num_sync_workers or len(worker_hosts),
     }
