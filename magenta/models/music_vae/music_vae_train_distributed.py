@@ -153,6 +153,7 @@ def _maybe_start_distributed_runtime():
   """Starts tf.train.Server in distributed mode and returns runtime overrides."""
   worker_hosts = _split_hosts(FLAGS.worker_hosts)
   ps_hosts = _split_hosts(FLAGS.ps_hosts)
+  task_index = FLAGS.task_index
 
   if not worker_hosts and not ps_hosts:
     return None
@@ -165,27 +166,34 @@ def _maybe_start_distributed_runtime():
     raise ValueError(
         'Distributed mode requires --job_name to be `worker` or `ps`.')
 
-  if FLAGS.task_index < 0:
+  if task_index < 0:
     raise ValueError('--task_index must be >= 0.')
 
-  if FLAGS.job_name == 'worker' and FLAGS.task_index >= len(worker_hosts):
+  # In a single `srun -n2` worker step, task indices can come from Slurm.
+  # This avoids shell wrappers just to pass --task_index per worker.
+  slurm_procid = os.environ.get('SLURM_PROCID')
+  if (FLAGS.job_name == 'worker' and len(worker_hosts) > 1 and slurm_procid and
+      FLAGS.task_index == 0):
+    task_index = int(slurm_procid)
+
+  if FLAGS.job_name == 'worker' and task_index >= len(worker_hosts):
     raise ValueError('--task_index is out of range for --worker_hosts.')
 
-  if FLAGS.job_name == 'ps' and FLAGS.task_index >= len(ps_hosts):
+  if FLAGS.job_name == 'ps' and task_index >= len(ps_hosts):
     raise ValueError('--task_index is out of range for --ps_hosts.')
 
   cluster = tf.train.ClusterSpec({'worker': worker_hosts, 'ps': ps_hosts})
   server = tf.train.Server(
-      cluster, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
+      cluster, job_name=FLAGS.job_name, task_index=task_index)
 
   if FLAGS.job_name == 'ps':
-    tf.logging.info('Parameter server %d waiting for requests.', FLAGS.task_index)
+    tf.logging.info('Parameter server %d waiting for requests.', task_index)
     server.join()
     return 'joined'
 
   return {
       'master': server.target,
-      'task': FLAGS.task_index,
+      'task': task_index,
       'num_ps_tasks': len(ps_hosts),
       'num_sync_workers': FLAGS.num_sync_workers or len(worker_hosts),
   }
